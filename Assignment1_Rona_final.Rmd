@@ -1,0 +1,385 @@
+---
+title: "Assignment 1"
+author: "Rona Hu"
+date: "2023-09-06"
+output:
+  html_document: default
+---
+
+Turn in this assignment as an HTML or PDF file to ELMS. Make sure to include the R Markdown or Quarto file that was used to generate it. 
+You should include the questions in your solutions. You may use the qmd file of the assignment provided to insert your answers.
+
+
+```{r setup, include=FALSE, tidy=TRUE}
+knitr::opts_chunk$set(echo = TRUE,cache=TRUE, 
+                      autodep=TRUE, cache.comments=FALSE,
+                      message=FALSE, warning=FALSE)
+```
+
+
+## Git and GitHub
+
+1) Provide the link to the GitHub repo that you used to practice git from Week 1. It should have:
+
+Your name on the README file.
+
+At least one commit with your name, with a description of what you did in that commit.
+
+##### The link:
+https://github.com/RonaGitHub/Hu1-a1.git
+
+
+## Reading Data
+
+Download both the Angell.dta (Stata data format) dataset and the Angell.txt dataset from this website: https://stats.idre.ucla.edu/stata/examples/ara/applied-regression-analysis-by-fox-data-files/
+
+
+2) Read in the .dta version and store in an object called angell_stata.
+
+```{r}
+# Load the necessary library for working with .dta files
+library(haven)
+
+angell_stata <- read_dta("/Users/ronamoon/Desktop/UMich/GitHub/FirstTrial/Angell.dta")
+head(angell_stata)
+```
+
+
+3) Read in the .txt version and store it in an object called angell_txt.
+
+```{r}
+angell_txt <- read.table('https://stats.oarc.ucla.edu/wp-content/uploads/2016/02/angell.txt')
+head(angell_txt)
+```
+
+
+4) What are the differences between angell_stata and angell_txt? Are there differences in the classes of the individual columns?
+
+```{r}
+# Compare the structure of angell_stata
+str(angell_stata)
+
+# Compare the structure of angell_txt
+str(angell_txt)
+```
+
+##### **Differences**:
+
+- Column Names: The Stata dataset (angell_stata) has meaningful column names, while the text dataset (angell_txt) uses auto-generated column names ("V1," "V2," etc.).
+
+- Column Classes: The Stata dataset has consistent column classes based on the format specified in the Stata file. In contrast, the text dataset has generic column classes without the format attributes.
+
+
+5) Make any updates necessary so that angell_txt is the same as angell_stata.
+
+```{r}
+# Rename columns in angell_txt to match angell_stata
+colnames(angell_txt) <- c("city", "morint", "ethhet", "geomob", "region")
+
+# Define column classes based on the format attributes of angell_stata
+angell_txt$city <- as.character(angell_txt$city)
+angell_txt$morint <- as.numeric(angell_txt$morint)
+angell_txt$ethhet <- as.numeric(angell_txt$ethhet)
+angell_txt$geomob <- as.numeric(angell_txt$geomob)
+angell_txt$region <- as.character(angell_txt$region)
+
+# Check the updated structure of angell_txt
+str(angell_txt)
+```
+
+
+6) Describe the Ethnic Heterogeneity variable. Use descriptive statistics such as mean, median, standard deviation, etc. How does it differ by region?
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+
+# Calculate descriptive statistics for ethhet
+ethhet_stats <- angell_stata %>%
+  summarise(
+    Mean = mean(ethhet, na.rm = TRUE),
+    Median = median(ethhet, na.rm = TRUE),
+    SD = sd(ethhet, na.rm = TRUE),
+    Min = min(ethhet, na.rm = TRUE),
+    Max = max(ethhet, na.rm = TRUE)
+  )
+
+# Summary by region
+ethhet_by_region <- angell_stata %>%
+  group_by(region) %>%
+  summarise(
+    Mean = mean(ethhet, na.rm = TRUE),
+    Median = median(ethhet, na.rm = TRUE),
+    SD = sd(ethhet, na.rm = TRUE)
+  )
+
+# Print the overall statistics and the summary by region
+cat("Descriptive Statistics for Ethnic Heterogeneity (ethhet):\n")
+print(ethhet_stats)
+
+cat("\nSummary of Ethnic Heterogeneity (ethhet) by Region:\n")
+print(ethhet_by_region)
+```
+
+- East (E) Region:
+Mean Ethnic Heterogeneity: 23.49
+Median Ethnic Heterogeneity: 22.10
+Standard Deviation of Ethnic Heterogeneity: 10.77
+
+- Midwest (MW) Region:
+Mean Ethnic Heterogeneity: 21.68
+Median Ethnic Heterogeneity: 19.25
+Standard Deviation of Ethnic Heterogeneity: 9.08
+
+- South (S) Region:
+Mean Ethnic Heterogeneity: 52.49
+Median Ethnic Heterogeneity: 53.80
+Standard Deviation of Ethnic Heterogeneity: 21.44
+
+- West (W) Region:
+Mean Ethnic Heterogeneity: 16.55
+Median Ethnic Heterogeneity: 16.15
+Standard Deviation of Ethnic Heterogeneity: 4.16
+
+##### **Interpretation**:
+
+- The South (S) region has the highest mean ethnic heterogeneity (52.49), indicating a relatively higher diversity of ethnicities within the population of cities in this region.
+- The East (E) region also has a relatively high mean ethnic heterogeneity (23.49).
+- The Midwest (MW) region has a moderately lower mean ethnic heterogeneity (21.68).
+- The West (W) region has the lowest mean ethnic heterogeneity (16.55), suggesting a relatively more homogeneous population in terms of ethnic diversity.
+
+
+## Describing Data
+
+R comes also with many built-in datasets. The "MASS" package, for example, comes with the "Boston" dataset.
+
+7) Install the "MASS" package, load the package. Then, load the Boston dataset.
+
+```{r}
+# Set the CRAN mirror for we have to knit this .Rmd file afterwards
+options(repos = "https://cloud.r-project.org/")
+
+# Install the MASS package
+install.packages("MASS")
+
+# Load the MASS library
+library(MASS)
+
+# Load the Boston dataset
+data(Boston)
+
+```
+
+
+8) What is the type of the Boston object?
+
+```{r}
+typeof(Boston)
+```
+The `Boston` object is of type "list".
+
+
+9) What is the class of the Boston object?
+```{r}
+class(Boston)
+```
+
+The class of `Boston` object is "data.frame".
+
+
+10) How many of the suburbs in the Boston data set bound the Charles river?
+
+```{r}
+# Count the number of suburbs that bound the Charles River
+num_bound_charles <- sum(Boston$chas == 1)
+
+cat("Number of suburbs that bound the Charles River:", num_bound_charles, "\n")
+```
+There are 35 suburbs bound the Charles River.
+
+
+11) Do any of the suburbs of Boston appear to have particularly high crime rates? Tax rates? Pupil-teacher ratios? Comment on the range of each variable.
+
+#### Crime Rate (CRIM):
+
+```{r}
+# Summary statistics for crime rate (CRIM)
+summary(Boston$crim)
+
+# Create a histogram for crime rate
+hist(Boston$crim, main = "Crime Rate Distribution", xlab = "Crime Rate", col = "#00274C", border = "#FFCB05")
+```
+
+- The crime rates vary significantly across suburbs, with the minimum being 0.00632 and the maximum being 88.97620.
+- Some suburbs appear to have particularly high crime rates, as indicated by the maximum value, which is much higher than the median and mean. These high crime rate suburbs might be of concern.
+
+#### Tax Rate (TAX):
+
+```{r}
+# Summary statistics for tax rate (TAX)
+summary(Boston$tax)
+
+# Create a histogram for tax rate
+hist(Boston$tax, main = "Tax Rate Distribution", xlab = "Tax Rate", col = "#00274C", border = "#FFCB05")
+```
+
+- The property tax rates also vary across suburbs, with the minimum being 187.0 and the maximum being 711.0.
+- While there is variability in tax rates, the range is not as extreme as the crime rate variable.
+
+#### Pupil-Teacher Ratio (PTRATIO):
+
+```{r}
+# Summary statistics for pupil-teacher ratio (PTRATIO)
+summary(Boston$ptratio)
+
+# Create a histogram for pupil-teacher ratio
+hist(Boston$ptratio, main = "Pupil-Teacher Ratio Distribution", xlab = "Pupil-Teacher Ratio", col = "#00274C", border = "#FFCB05")
+```
+
+- The pupil-teacher ratios range from 12.60 to 22.00, indicating variations in class sizes across suburbs.
+- There is less extreme variation in pupil-teacher ratios compared to crime rates.
+
+
+12) Describe the distribution of pupil-teacher ratio among the towns in this data set that have a per capita crime rate larger than 1. How does it differ from towns that have a per capita crime rate smaller than 1?
+
+```{r}
+# Load the MASS library and the Boston dataset
+library(MASS)
+data("Boston")
+
+# Create a new binary variable for high crime rate (CRIM > 1)
+Boston$HighCrime <- ifelse(Boston$crim > 1, "High Crime", "Low Crime")
+
+# Box plot of Pupil-Teacher Ratio (PTRATIO) by High/Low Crime
+boxplot(ptratio ~ HighCrime, data = Boston, main = "Pupil-Teacher Ratio by Crime Rate",
+        xlab = "Crime Rate", ylab = "Pupil-Teacher Ratio", col = "#00274C", border = "#FFCB05")
+```
+
+
+## Writing Functions
+
+13) Write a function that calculates 95% confidence intervals for a point estimate. The function should be called my_CI. When called with my_CI(2, 0.2), the function should print out "The 95% CI upper bound of point estimate 2 with standard error 0.2 is 2.392. The lower bound is 1.608."
+
+Note: The function should take a point estimate and its standard error as arguments. You may use the formula for 95% CI: point estimate +/- 1.96*standard error.
+
+Hint: Pasting text in R can be done with: paste() and paste0()
+
+```{r}
+my_CI <- function(point_estimate, standard_error) {
+  z_value <- 1.96  # Z-value for a 95% confidence interval
+  
+  # Calculate upper and lower bounds
+  upper_bound <- point_estimate + z_value * standard_error
+  lower_bound <- point_estimate - z_value * standard_error
+  
+  # Print the result
+  cat("The 95% CI upper bound of point estimate", point_estimate, "with standard error", standard_error, "is", round(upper_bound, 3), ". The lower bound is", round(lower_bound, 3), ".\n")
+}
+
+# Example usage:
+my_CI(2, 0.2)
+```
+
+
+14) Create a new function called my_CI2 that does that same thing as the my_CI function but outputs a vector of length 2 with the lower and upper bound of the confidence interval instead of printing out the text. Use this to find the 95% confidence interval for a point estimate of 0 and standard error 0.4.
+
+```{r}
+# change 1.96 (confidence level) in to z_level for a 95% confidence interval
+my_CI2 <- function(point_estimate, se, z_level = 1.96){     # se -> standard_error 
+  lower_bound <- point_estimate - z_level * se
+  upper_bound <- point_estimate + z_level * se
+  
+  c(lower_bound, upper_bound)
+  
+}
+
+# Example usage to find the 95% confidence interval for point estimate 0 with standard error 0.4:
+confidence_interval <- my_CI2(0, 0.4)
+confidence_interval
+```
+
+
+15) Update the my_CI2 function to take any confidence level instead of only 95%. Call the new function my_CI3. You should add an argument to your function for confidence level.
+
+Hint: Use the qnorm function to find the appropriate z-value. For example, for a 95% confidence interval, using qnorm(0.975) gives approximately 1.96.
+
+```{r}
+my_CI3 <- function(point_estimate, standard_error, confidence_level) {
+  alpha <- 1 - (1 - confidence_level) / 2  # Calculate alpha based on the confidence level
+  z_value <- qnorm(alpha)  # Calculate the z-value
+  
+  # Calculate upper and lower bounds
+  upper_bound <- point_estimate + z_value * standard_error
+  lower_bound <- point_estimate - z_value * standard_error
+  
+  # Return the result as a vector
+  c(lower_bound, upper_bound)
+}
+
+# Example usage to find the 90% confidence interval for point estimate 0 with standard error 0.4:
+confidence_interval <- my_CI3(0, 0.4, 0.90)
+confidence_interval
+
+# If we try to find the 95% confidence interval for point estimate 0 with standard error 0.4, we'll we can get the same value as the previous question (Q14):
+confidence_interval <- my_CI3(0, 0.4, 0.95)
+confidence_interval
+```
+
+
+16) Without hardcoding any numbers in the code, find a 99% confidence interval for Ethnic Heterogeneity in the Angell dataset. Find the standard error by dividing the standard deviation by the square root of the sample size.
+
+```{r}
+# Calculate the sample size (n) of the Ethnic Heterogeneity variable
+n <- length(angell_stata$ethhet)
+
+# Calculate the standard deviation (sd) of the Ethnic Heterogeneity variable
+sd_ethhet <- sd(angell_stata$ethhet)
+
+# Calculate the standard error (SE) by dividing the standard deviation by the square root of the sample size
+SE <- sd_ethhet / sqrt(n)
+
+# Calculate a 99% confidence interval for Ethnic Heterogeneity using the my_CI3 function
+confidence_interval <- my_CI3(mean(angell_stata$ethhet), SE, 0.99)
+
+# Print the confidence interval
+confidence_interval
+```
+
+
+17) Write a function that you can apply to the Angell dataset to get 95% confidence intervals. The function should take one argument: a vector. Use if-else statements to output NA and avoid error messages if the column in the data frame is not numeric or logical.
+
+First we have to check if the input vector is numeric or logical. 
+The function `calculate_CI` takes a vector as an argument and returns a 95% confidence interval. 
+And we use if-else statements to handle non-numeric or non-logical columns and returns NA in those cases:
+
+```{r}
+calculate_CI <- function(data_vector) {
+  # Check if the input vector is numeric or logical
+  if (is.numeric(data_vector) || is.logical(data_vector)) {
+    # Calculate the sample size (n)
+    n <- length(data_vector)
+    
+    # Calculate the standard deviation (sd) of the input vector
+    sd_value <- sd(data_vector)
+    
+    # Calculate the standard error (SE) by dividing sd by the square root of n
+    SE <- sd_value / sqrt(n)
+    
+    # Calculate the confidence interval using the my_CI3 function with a 95% confidence level
+    CI <- my_CI3(mean(data_vector), SE, 0.95)
+    
+    return(CI)
+  } else {
+    # If the input vector is not numeric or logical, return NA
+    return(NA)
+  }
+}
+
+# Example usage:
+# Calculate a 95% confidence interval for the "ethhet" column in the Angell dataset
+ethhet_CI <- calculate_CI(angell_stata$ethhet)
+
+# Print the confidence interval
+ethhet_CI
+```
+
